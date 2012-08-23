@@ -46,6 +46,16 @@
             <strong><%= project.last_build_status %></strong>
             <span class="build_time" title="<%= project.last_build_time %>"><%= project.last_build_time %></span>.
           </p>
+		  <% if project.binfo != ""  %>
+			  <p>
+			  <span title="latest change"><%= project.binfo.msg %>: <%= project.binfo.comitter %></span>.
+			  </p>
+			  <% unless project.binfo.branch.nil? %>
+				  <p>
+				  <span title="deployed branch">Branch: <%= project.binfo.branch %></span>.
+				  </p>
+			  <% end %>
+		  <% end %>
         </div>
       </div>
     <% end %>

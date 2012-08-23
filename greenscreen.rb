@@ -9,6 +9,7 @@ require 'open-uri'
 require 'yaml'
 require 'erb'
 require 'timeout' # to catch error
+require 'httparty'
 
 get '/' do
   servers = load_servers
@@ -62,7 +63,7 @@ def accumulate_projects(server, xml)
     end
 
   projects.collect do |project|
-    monitored_project = MonitoredProject.create(project)
+    monitored_project = MonitoredProject.create(project, server)
     if job_matchers
       if job_matchers.detect { |matcher| monitored_project.name =~ matcher }
         monitored_project
@@ -74,9 +75,10 @@ def accumulate_projects(server, xml)
 end
 
 class MonitoredProject
-  attr_accessor :name, :last_build_status, :activity, :last_build_time, :web_url, :last_build_label
+  attr_accessor :name, :last_build_status, :activity, :last_build_time, :web_url, :last_build_label, :binfo
+  @jsonsuffix = 'lastBuild/api/json'
 
-  def self.create(project)
+  def self.create(project, server)
     MonitoredProject.new.tap do |mp|
       mp.activity = project.attributes["activity"]
       mp.last_build_time = Time.parse(project.attributes["lastBuildTime"]).localtime
@@ -84,6 +86,7 @@ class MonitoredProject
       mp.last_build_label = project.attributes["lastBuildLabel"]
       mp.last_build_status = project.attributes["lastBuildStatus"].downcase
       mp.name = project.attributes["name"]
+	  mp.binfo = BuildInfo.new( mp.web_url, server )
     end
   end
 
@@ -95,10 +98,46 @@ class MonitoredProject
       mp.web_url = server["url"]
       mp.last_build_status = "Failure"
       mp.activity = "Sleeping"
+	  mp.binfo = ""
     end
   end
 
   def building?
     self.activity =~ /building/i
   end
+
 end
+
+class BuildInfo
+	include HTTParty
+	attr_accessor :comitter, :msg, :branch
+
+	def initialize(url, server)
+		response = HTTParty.get( url + "lastBuild/api/json" , :basic_auth => { :username => server['username'], :password => server['password'] })
+		resp = response.parsed_response
+		resp["actions"].each do |action|
+			next if action.nil?
+			if !action["causes"].nil?
+				causes = action["causes"][0]
+				cause = causes["shortDescription"]
+				if cause =~ /Started by an SCM change/
+					hash = resp["changeSet"]["items"][0]
+					self.comitter = hash["author"]["fullName"]
+					self.msg = hash["msg"]
+				elsif cause =~ /Started by user/
+					self.msg = "Started by user "
+					self.comitter = causes["userName"]
+				elsif cause =~ /Started by upstream project/
+					self.msg = "no change"
+					self.comitter = "Upstream Project " + causes["upStreamProject"]
+				end
+			elsif !action["parameters"].nil?
+				next if action["parameters"][0].nil?
+				next if action["parameters"][0]["value"].nil?
+				self.branch = action["parameters"][0]["value"]
+			end
+		end
+	end
+
+end
+	
