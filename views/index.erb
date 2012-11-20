@@ -51,7 +51,7 @@ div.content {
               <% if ( project.binfo.kind_of? String ) %>
                 <p>ERROR: <%= project.binfo %></p>
               <% elsif ( project.binfo.kind_of? BuildInfo ) %>
-                <%= project.binfo.comitter %>: <%= project.binfo.msg %>
+                <p><%= project.binfo.comitter %>: <%= project.binfo.msg %></p>
                 <% unless (project.binfo.branch.nil? || project.binfo.branch == "no branch" ) %>
                   <p title="deployed branch">Branch: <%= project.binfo.branch %></p>
                 <% end %>
