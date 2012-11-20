@@ -12,11 +12,11 @@ from anywhere in the room.
 
 To get the GreenScreen application itself, you can clone it from git:
 
-    $ git clone git://github.com/martinjandrews/greenscreen.git
+    $ git clone git://github.com/smlgbl/greenscreen.git
 
 Or download the project by clicking on the 'download' link [on this page][dl].
 
-[dl]: http://github.com/martinjandrews/greenscreen/
+[dl]: http://github.com/smlgbl/greenscreen/
 
 To install all of GreenScreen's dependencies, switch to its directory
 and do:
@@ -60,3 +60,16 @@ screen.
 
 GreenScreen also includes a rackup file (`config.ru`) so you can
 deploy it under whichever rack-supporting webserver you like.
+
+## Init files
+
+I added quick&dirty init script, to get it started automatically,
+even though the solution mentioned in the paragraph above about rack
+handling is much better.
+Just copy the file greenscreen.init_script to /etc/init.d/greenscreen
+
+    $ sudo cp greenscreen.init_script /etc/init.d/greenscreen
+
+Then change each occurence of 'home/samuel.gabel/greenscreen' to
+reflect the actual path. Do this for the init script as well as the 
+start_greenscreen.sh script.
