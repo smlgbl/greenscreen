@@ -1,44 +1,44 @@
 <html>
-  <head>
-    <title>Green Screen - Monitor Your Builds</title>
-    <meta http-equiv="refresh" content="15" />
-    <link rel='stylesheet' href='styles.css' type='text/css' media="screen">
-    <link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:regular,bold' rel='stylesheet' type='text/css'>
-    <script type="text/javascript" src="prototype.js"></script>
-    <script type="text/javascript" src="date.js"></script>
-    <script type="text/javascript">
+<head>
+  <title>Green Screen - Monitor Your Builds</title>
+  <meta http-equiv="refresh" content="15" />
+  <link rel='stylesheet' href='styles.css' type='text/css' media="screen">
+  <link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:regular,bold' rel='stylesheet' type='text/css'>
+  <script type="text/javascript" src="prototype.js"></script>
+  <script type="text/javascript" src="date.js"></script>
+  <script type="text/javascript">
 
-      document.observe("dom:loaded", function() {
-        $$("span.build_time").each(function(element) {
-          var ts = new Date(element.innerHTML);
-          element.innerHTML = ts.relativeTimeInWords(new Date());
-        });
-      });
-    </script>
-    <style type="text/css">
-      <% rows = [@rows, 1.0].max %>
-      <% h1size = 100 / rows * 3 %>
-      .status {
-      	width: <%= 100 / @columns %>%;
-      	height: <%= 100.0 / rows %>%;
-      }
-      h1 {
-        font-size: <%= h1size %>px;
-      }
-      div.content {
-        height: <%= h1size * 1.2 + 12 %>px;
-        margin-top: -<%= h1size * 1.2 / 2 + 6 %>px;
-      }
-    </style>
-  </head>
-  <body>
-    <% if @projects.empty? %>
-      <p>No builds found</p>
-    <% end %>
+  document.observe("dom:loaded", function() {
+    $$("span.build_time").each(function(element) {
+      var ts = new Date(element.innerHTML);
+      element.innerHTML = ts.relativeTimeInWords(new Date());
+    });
+  });
+  </script>
+  <style type="text/css">
+  <% rows = [@rows, 1.0].max %>
+  <% h1size = 100 / rows * 3 %>
+  .status {
+   width: <%= 100 / @columns %>%;
+   height: <%= 100.0 / rows %>%;
+ }
+ h1 {
+  font-size: <%= h1size %>px;
+}
+div.content {
+  height: <%= h1size * 1.2 + 12 %>px;
+  margin-top: -<%= h1size * 1.2 / 2 + 6 %>px;
+}
+</style>
+</head>
+<body>
+  <% if @projects.empty? %>
+  <p>No builds found</p>
+  <% end %>
 
-    <% @projects.each do |project| %>
-      <div class="status <%= project.last_build_status %> <%= project.activity %>">
-        <% if (project.building?) %><p class="building">Building now</p><% end %>
+  <% @projects.each do |project| %>
+    <div class="status <%= project.last_build_status %> <%= project.activity %>">
+      <% if (project.building?) %><p class="building">Building now</p><% end %>
         <div class="content">
           <h1 title="<%= project.name %>"><a href="<%= project.web_url%>"><%= project.name %></a></h1>
           <p>
@@ -46,18 +46,20 @@
             <strong><%= project.last_build_status %></strong>
             <span class="build_time" title="<%= project.last_build_time %>"><%= project.last_build_time %></span>.
           </p>
-		  <% if project.binfo != ""  %>
-			  <p>
-			  <span title="latest change"><%= project.binfo.msg %>: <%= project.binfo.comitter %></span>.
-			  </p>
-			  <% unless project.binfo.branch.nil? %>
-				  <p>
-				  <span title="deployed branch">Branch: <%= project.binfo.branch %></span>.
-				  </p>
-			  <% end %>
-		  <% end %>
+          <% if( !project.binfo.nil? ) %>
+            
+              <% if ( project.binfo.kind_of? String ) %>
+                <p>ERROR: <%= project.binfo %></p>
+              <% elsif ( project.binfo.kind_of? BuildInfo ) %>
+                <%= project.binfo.comitter %>: <%= project.binfo.msg %>
+                <% unless (project.binfo.branch.nil? || project.binfo.branch == "no branch" ) %>
+                  <p title="deployed branch">Branch: <%= project.binfo.branch %></p>
+                <% end %>
+              <% end %>
+            
+          <% end %>
         </div>
-      </div>
-    <% end %>
-  </body>
+    </div>
+  <% end %>
+</body>
 </html>

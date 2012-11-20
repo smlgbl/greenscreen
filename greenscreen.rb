@@ -86,7 +86,7 @@ class MonitoredProject
       mp.last_build_label = project.attributes["lastBuildLabel"]
       mp.last_build_status = project.attributes["lastBuildStatus"].downcase
       mp.name = project.attributes["name"]
-	  mp.binfo = BuildInfo.new( mp.web_url, server )
+      mp.binfo = BuildInfo.new( mp.web_url, server )
     end
   end
 
@@ -98,7 +98,7 @@ class MonitoredProject
       mp.web_url = server["url"]
       mp.last_build_status = "Failure"
       mp.activity = "Sleeping"
-	  mp.binfo = ""
+      mp.binfo = e.backtrace.join("<br />")
     end
   end
 
@@ -113,31 +113,41 @@ class BuildInfo
 	attr_accessor :comitter, :msg, :branch
 
 	def initialize(url, server)
+		self.comitter = "nobody"
+		self.msg = "no reason"
+		self.branch = "no branch"
 		response = HTTParty.get( url + "lastBuild/api/json" , :basic_auth => { :username => server['username'], :password => server['password'] })
 		resp = response.parsed_response
-		resp["actions"].each do |action|
-			next if action.nil?
-			if !action["causes"].nil?
-				causes = action["causes"][0]
-				cause = causes["shortDescription"]
-				if cause =~ /Started by an SCM change/
-					hash = resp["changeSet"]["items"][0]
-					self.comitter = hash["author"]["fullName"]
-					self.msg = hash["msg"]
-				elsif cause =~ /Started by user/
-					self.msg = "Started by user "
-					self.comitter = causes["userName"]
-				elsif cause =~ /Started by upstream project/
-					self.msg = "no change"
-					self.comitter = "Upstream Project " + causes["upStreamProject"]
+		if !resp.nil?
+			resp["actions"].each do |action|
+				next if action.nil?
+				if !action["causes"].nil?
+					causes = action["causes"][0]
+					cause = causes["shortDescription"]
+					if cause =~ /Started by an SCM change/
+						hash = resp["changeSet"]["items"][0]
+						if !hash.nil?
+							self.comitter = hash["author"]["fullName"]
+							self.msg = hash["msg"]
+						end
+					elsif cause =~ /Started by user/
+						self.msg = "I wanted it this way!"
+						self.comitter = causes["userName"]
+					elsif cause =~ /Started by upstream project/
+						self.msg = "no change"
+						self.comitter = "Upstream Project "
+						if !causes["upStremProject"].nil?
+							self.comitter += causes["upStreamProject"]
+						end
+					end
+        end
+				if !action["parameters"].nil?
+					next if action["parameters"][0].nil?
+					next if action["parameters"][0]["value"].nil?
+					self.branch = action["parameters"][0]["value"]
 				end
-			elsif !action["parameters"].nil?
-				next if action["parameters"][0].nil?
-				next if action["parameters"][0]["value"].nil?
-				self.branch = action["parameters"][0]["value"]
 			end
 		end
 	end
-
 end
 	
